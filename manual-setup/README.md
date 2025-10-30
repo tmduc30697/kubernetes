@@ -6,16 +6,14 @@ Hệ thống ETCD được triển khai trên hai container Ubuntu 22.04. File b
 
 **Step 1**: Tạo hai container Ubuntu 22.04, sau đó copy file binary ETCD đã chuẩn bị sẵn vào từng container để sẵn sàng cho quá trình cài đặt.
 ```bash
-# create 2 containers
-docker run -it -d --privileged --name etcd-1 ubuntu:22.04
-docker run -it -d --privileged --name etcd-2 ubuntu:22.04
-
-# create /app directory
+# etcd 1
+docker run -it -d -p 6000:2379 --privileged --name etcd-1 ubuntu:22.04
 docker exec -it etcd-1 mkdir app/
-docker exec -it etcd-2 mkdir app/
-
-# copy binary file to /app directory
 docker cp ./etcd-v3.6.5-linux-amd64.tar.gz etcd-1:app/
+
+# etcd 2
+docker run -it -d -p 6001:2379 --privileged --name etcd-2 ubuntu:22.04
+docker exec -it etcd-2 mkdir app/
 docker cp ./etcd-v3.6.5-linux-amd64.tar.gz etcd-2:app/
 ```
 
@@ -24,15 +22,13 @@ docker cp ./etcd-v3.6.5-linux-amd64.tar.gz etcd-2:app/
 ```bash
 # setup ETCD 1
 docker exec -it etcd-1 bash
-cd app
-tar xzf etcd-v3.6.5-linux-amd64.tar.gz
-cp etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
+tar xzf /app/etcd-v3.6.5-linux-amd64.tar.gz -C /app
+cp /app/etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
 
 # setup ETCD 2
 docker exec -it etcd-2 bash
-cd app
-tar xzf etcd-v3.6.5-linux-amd64.tar.gz
-cp etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
+tar xzf /app/etcd-v3.6.5-linux-amd64.tar.gz -C /app
+cp /app/etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
 ```
 
 **Step 3**: Khởi động dịch vụ ETCD trên cả hai container, sau đó kiểm tra trạng thái hoạt động để đảm bảo hai server hoạt động ổn định và replication hoạt động chính xác.
