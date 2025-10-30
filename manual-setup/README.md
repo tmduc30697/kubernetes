@@ -39,12 +39,14 @@ docker exec -d etcd-1 \
   --data-dir=/var/lib/etcd \
   --listen-client-urls=http://0.0.0.0:2379 \
   --advertise-client-urls=http://0.0.0.0:2379
+curl 127.0.0.1:6000/health
 
 docker exec -d etcd-2 \
   etcd \
   --data-dir=/var/lib/etcd \
   --listen-client-urls=http://0.0.0.0:2379 \
   --advertise-client-urls=http://0.0.0.0:2379
+curl 127.0.0.1:6001/health
 ```
 
 **Step 3**: Cấu hình replication giữa hai server bằng cách thiết lập các tham số peer URL và cluster, sau đó thực hiện kiểm tra bằng các lệnh `etcdctl put` và `etcdctl get` để xác nhận dữ liệu được đồng bộ thành công giữa các node.
