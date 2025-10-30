@@ -5,12 +5,51 @@
 Hệ thống ETCD được triển khai trên hai container Ubuntu 22.04. File binary ETCD được copy sẵn vào từng container và cài đặt thủ công. Sau đó cấu hình các tham số kết nối để hai node có thể giao tiếp và thiết lập replication giữa chúng. Cuối cùng, sử dụng các lệnh như etcdctl member list, etcdctl put, và etcdctl get để kiểm tra hoạt động của cụm và xác nhận replication hoạt động chính xác.
 
 **Step 1**: Tạo hai container Ubuntu 22.04, sau đó copy file binary ETCD đã chuẩn bị sẵn vào từng container để sẵn sàng cho quá trình cài đặt.
-```shell
+```bash
+# create 2 containers
 docker run -it -d --privileged --name etcd-1 ubuntu:22.04
-docker run -it -d --privileged --name etcd-1 ubuntu:22.04
+docker run -it -d --privileged --name etcd-2 ubuntu:22.04
+
+# create /app directory
+docker exec -it etcd-1 mkdir app/
+docker exec -it etcd-2 mkdir app/
+
+# copy binary file to /app directory
+docker cp ./etcd-v3.6.5-linux-amd64.tar.gz etcd-1:app/
+docker cp ./etcd-v3.6.5-linux-amd64.tar.gz etcd-2:app/
 ```
 
-**Step 2**: Truy cập vào bash của từng container, thực hiện cài đặt ETCD từ file binary và khởi động dịch vụ, sau đó kiểm tra để đảm bảo cả hai server đã chạy thành công.
+**Step 2**: Truy cập vào bash của từng container, thực hiện cài đặt ETCD từ file binary và cấu hình các tham số cần thiết cho từng node.
+
+```bash
+# setup ETCD 1
+docker exec -it etcd-1 bash
+cd app
+tar xzf etcd-v3.6.5-linux-amd64.tar.gz
+cp etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
+
+# setup ETCD 2
+docker exec -it etcd-2 bash
+cd app
+tar xzf etcd-v3.6.5-linux-amd64.tar.gz
+cp etcd-v3.6.5-linux-amd64/etcd* /usr/local/bin
+```
+
+**Step 3**: Khởi động dịch vụ ETCD trên cả hai container, sau đó kiểm tra trạng thái hoạt động để đảm bảo hai server hoạt động ổn định và replication hoạt động chính xác.
+
+```bash
+docker exec -d etcd-1 \
+  etcd \
+  --data-dir=/var/lib/etcd \
+  --listen-client-urls=http://0.0.0.0:2379 \
+  --advertise-client-urls=http://0.0.0.0:2379
+
+docker exec -d etcd-2 \
+  etcd \
+  --data-dir=/var/lib/etcd \
+  --listen-client-urls=http://0.0.0.0:2379 \
+  --advertise-client-urls=http://0.0.0.0:2379
+```
 
 **Step 3**: Cấu hình replication giữa hai server bằng cách thiết lập các tham số peer URL và cluster, sau đó thực hiện kiểm tra bằng các lệnh `etcdctl put` và `etcdctl get` để xác nhận dữ liệu được đồng bộ thành công giữa các node.
 
